@@ -38,6 +38,7 @@ html,body{height:100%;font-family:'Malgun Gothic','맑은 고딕',Apple SD Gothi
 .ad-filters{display:grid;grid-template-columns:repeat(4,minmax(120px,1fr));gap:9px}.ad-filters select,.ad-filters input{width:100%;border:1px solid #cbd5e1;border-radius:9px;padding:10px;font:12px inherit;background:#fff;color:#1e293b}
 .ad-cards{display:grid;grid-template-columns:repeat(6,1fr);gap:9px}.ad-card{background:#fff;border:1px solid #e2e8f0;border-radius:13px;padding:13px;min-width:0}.ad-card-label{font-size:10px;color:#64748b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.ad-card-value{font-size:22px;font-weight:900;margin-top:4px}.ad-card-unit{font-size:10px;color:#94a3b8;margin-left:2px}
 .ad-table-wrap{overflow:auto;border:1px solid #e2e8f0;border-radius:12px}.ad-table{width:100%;border-collapse:collapse;min-width:1020px;font-size:11px}.ad-table th{position:sticky;top:0;background:#eef2ff;color:#3730a3;text-align:left;padding:10px 9px;white-space:nowrap}.ad-table td{padding:10px 9px;border-top:1px solid #f1f5f9;white-space:nowrap}.ad-table tbody tr:hover{background:#f8fafc}.delta{font-weight:800}.delta.up{color:#059669}.delta.down{color:#dc2626}.delta.same{color:#64748b}.ad-empty{text-align:center;color:#94a3b8;padding:32px!important}.ad-status{font-size:11px;color:#64748b;margin-left:auto}
+.report-open-btn{border:0;border-radius:8px;padding:7px 9px;background:#4f46e5;color:#fff;font:800 10px inherit;cursor:pointer;white-space:nowrap}
 @media(max-width:760px){.ad-filters{grid-template-columns:1fr 1fr}.ad-cards{grid-template-columns:repeat(2,1fr)}.ad-wrap{padding:12px}.ad-head{padding:14px}.ad-status{width:100%;margin:2px 0 0}.ad-actions{align-items:stretch}.ad-btn{flex:1}}
 
 /* SURVEY */
@@ -214,6 +215,7 @@ html,body{height:100%;font-family:'Malgun Gothic','맑은 고딕',Apple SD Gothi
         <input class="ad-file" id="admin-file" type="file" accept=".json,.csv,application/json,text/csv" onchange="importAdminFile(event)">
         <button class="ad-btn secondary" onclick="loadSampleData()">샘플 데이터 보기</button>
         <button class="ad-btn green" onclick="downloadAdminCSV()">CSV 다운로드</button>
+        <button class="ad-btn" onclick="printFilteredSummary()">📄 전체 요약 PDF 저장</button>
         <button class="ad-btn danger" onclick="clearAdminData()">불러온 데이터 지우기</button>
         <span class="ad-status" id="admin-status">데이터 0건</span>
       </div>
@@ -231,7 +233,7 @@ html,body{height:100%;font-family:'Malgun Gothic','맑은 고딕',Apple SD Gothi
     <section class="ad-cards" id="admin-cards"></section>
     <section class="ad-panel">
       <div class="ad-panel-title">학생별 검사 결과 <span id="admin-count" style="color:#6366f1"></span></div>
-      <div class="ad-table-wrap"><table class="ad-table"><thead><tr><th>검사일시</th><th>학교</th><th>학년/반</th><th>학생명</th><th>총점</th><th>이전 대비</th><th>학습동기</th><th>계획성</th><th>집중력</th><th>기억력</th><th>학습전략</th><th>수준</th><th>attemptId</th></tr></thead><tbody id="admin-tbody"></tbody></table></div>
+      <div class="ad-table-wrap"><table class="ad-table"><thead><tr><th>결과지</th><th>검사일시</th><th>학교</th><th>학년/반</th><th>학생명</th><th>총점</th><th>이전 대비</th><th>학습동기</th><th>계획성</th><th>집중력</th><th>기억력</th><th>학습전략</th><th>수준</th><th>attemptId</th></tr></thead><tbody id="admin-tbody"></tbody></table></div>
     </section>
   </main>
 </div>
@@ -562,7 +564,7 @@ function showResults(){
 }
 
 // ── DOWNLOAD RESULT ──────────────────────────────────────────
-function downloadResult(){
+function downloadResult(returnHtml=false){
   const total=ans.reduce((a,b)=>a+b,0);
   const pct=Math.round((total/180)*100);
   const lvl=pct>=79?'우수':pct>=62?'양호':pct>=46?'부족':'매우부족';
@@ -808,6 +810,7 @@ function saveAndPreviewReport(){
 <\/script>
 </body></html>`;
 
+  if(returnHtml)return html;
   // ── 현재 페이지를 결과지로 교체 (모바일 완벽 호환) ──────────
   document.open('text/html','replace');
   document.write(html);
@@ -837,7 +840,8 @@ function normalizeRecord(r,i=0){
   const catScores=parseCatScores(r);let total=Number(readField(r,['total','총점'],catScores.reduce((a,b)=>a+b,0)))||0;
   let pct=Number(readField(r,['pct','percent','percentage','백분율'],Math.round(total/180*100)))||0;
   const timestamp=String(readField(r,['timestamp','createdAt','datetime','검사일시','date','날짜'],''));
-  return {school:String(readField(r,['school','학교','학교명'],'')),grade:String(readField(r,['grade','class','학년반','학년/반'],'')),name:String(readField(r,['name','studentName','학생명','이름'],'')),date:String(readField(r,['date','날짜'],timestamp)),timestamp:timestamp||String(readField(r,['date','날짜'],'')),attemptId:String(readField(r,['attemptId','attempt_id','검사ID'],`IMPORTED-${i+1}`)),total,pct,level:String(readField(r,['level','수준'],pct>=79?'우수':pct>=62?'양호':pct>=46?'부족':'매우부족')),catScores};
+  let answers=readField(r,['answers','응답','응답값'],[]);if(typeof answers==='string'){try{answers=JSON.parse(answers);}catch(e){answers=answers.split(/[|,;/]/).map(Number);}}if(!Array.isArray(answers))answers=[];answers=answers.map(Number);
+  return {school:String(readField(r,['school','학교','학교명'],'')),grade:String(readField(r,['grade','class','학년반','학년/반'],'')),name:String(readField(r,['name','studentName','학생명','이름'],'')),date:String(readField(r,['date','날짜'],timestamp)),timestamp:timestamp||String(readField(r,['date','날짜'],'')),attemptId:String(readField(r,['attemptId','attempt_id','검사ID'],`IMPORTED-${i+1}`)),total,pct,level:String(readField(r,['level','수준'],pct>=79?'우수':pct>=62?'양호':pct>=46?'부족':'매우부족')),catScores,answers};
 }
 function getLocalRecords(){try{return JSON.parse(localStorage.getItem(LOCAL_RESULTS_KEY)||'[]').map(normalizeRecord);}catch(e){return [];}}
 function openAdmin(){adminRecords=getLocalRecords();renderAdmin();showScreen('admin');}
@@ -884,10 +888,27 @@ function studentKey(r){return [r.school,r.grade,r.name].join('|').toLowerCase();
 function previousTotals(){const groups={};adminRecords.forEach(r=>(groups[studentKey(r)]??=[]).push(r));const prev=new Map();Object.values(groups).forEach(list=>{list.sort((a,b)=>parseDateValue(a.timestamp||a.date)-parseDateValue(b.timestamp||b.date));list.forEach((r,i)=>prev.set(r,i?list[i-1].total:null));});return prev;}
 function displayDate(r){const t=parseDateValue(r.timestamp||r.date);return t?new Date(t).toLocaleString('ko-KR',{year:'2-digit',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}):(r.date||'-');}
 function renderAdminTable(){
-  const prev=previousTotals();document.getElementById('admin-count').textContent=`${filteredAdminRecords.length}건`;document.getElementById('admin-tbody').innerHTML=filteredAdminRecords.length?filteredAdminRecords.map(r=>{const p=prev.get(r),d=p===null||p===undefined?null:r.total-p,dc=d>0?'up':d<0?'down':'same',dt=d===null?'첫 검사':`${d>0?'+':''}${d}점`;return`<tr><td>${esc(displayDate(r))}</td><td>${esc(r.school||'-')}</td><td>${esc(r.grade||'-')}</td><td><b>${esc(r.name||'-')}</b></td><td><b>${r.total}</b> / 180</td><td class="delta ${dc}">${dt}</td>${r.catScores.map((s,i)=>`<td>${s} / ${CATS[i].max}</td>`).join('')}<td>${esc(r.level)}</td><td>${esc(r.attemptId)}</td></tr>`;}).join(''):'<tr><td class="ad-empty" colspan="13">표시할 결과가 없습니다. 파일을 불러오거나 샘플 데이터를 선택해 주세요.</td></tr>';
+  const prev=previousTotals();document.getElementById('admin-count').textContent=`${filteredAdminRecords.length}건`;document.getElementById('admin-tbody').innerHTML=filteredAdminRecords.length?filteredAdminRecords.map(r=>{const p=prev.get(r),d=p===null||p===undefined?null:r.total-p,dc=d>0?'up':d<0?'down':'same',dt=d===null?'첫 검사':`${d>0?'+':''}${d}점`;return`<tr><td><button class="report-open-btn" onclick="openAdminStudentReport('${esc(r.attemptId)}')">보기·PDF</button></td><td>${esc(displayDate(r))}</td><td>${esc(r.school||'-')}</td><td>${esc(r.grade||'-')}</td><td><b>${esc(r.name||'-')}</b></td><td><b>${r.total}</b> / 180</td><td class="delta ${dc}">${dt}</td>${r.catScores.map((s,i)=>`<td>${s} / ${CATS[i].max}</td>`).join('')}<td>${esc(r.level)}</td><td>${esc(r.attemptId)}</td></tr>`;}).join(''):'<tr><td class="ad-empty" colspan="14">표시할 결과가 없습니다. 파일을 불러오거나 샘플 데이터를 선택해 주세요.</td></tr>';
 }
 function csvEscape(v){const s=String(v??'');return /[",\n\r]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s;}
 function downloadAdminCSV(){if(!filteredAdminRecords.length){showToast('다운로드할 데이터가 없습니다.');return;}const heads=['timestamp','date','school','grade','name','attemptId','total','pct','level','motivation','planning','concentration','memory','strategy'];const lines=[heads.join(','),...filteredAdminRecords.map(r=>[r.timestamp,r.date,r.school,r.grade,r.name,r.attemptId,r.total,r.pct,r.level,...r.catScores].map(csvEscape).join(','))];const blob=new Blob(['\uFEFF'+lines.join('\r\n')],{type:'text/csv;charset=utf-8'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`학습습관_결과_${new Date().toISOString().slice(0,10)}.csv`;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),500);}
+function adminReportHtml(records,title){
+  const rows=records.map(r=>`<tr><td>${esc(displayDate(r))}</td><td>${esc(r.school||'-')}</td><td>${esc(r.grade||'-')}</td><td><b>${esc(r.name||'-')}</b></td><td><b>${r.total}/180</b><br>${r.pct}% · ${esc(r.level)}</td>${r.catScores.map((s,i)=>`<td>${s}/${CATS[i].max}</td>`).join('')}</tr>`).join('');
+  return `<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(title)}</title><style>@page{size:A4 landscape;margin:12mm}*{box-sizing:border-box}body{font-family:"Malgun Gothic",sans-serif;color:#1e293b;margin:0;padding:24px}h1{font-size:22px;margin:0 0 6px}.sub{color:#64748b;font-size:12px;margin-bottom:18px}.actions{display:flex;gap:8px;margin-bottom:18px}.actions button{border:0;border-radius:10px;padding:12px 16px;background:#4f46e5;color:white;font-weight:800;font-size:14px}.cards{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin-bottom:18px}.card{border:1px solid #dbeafe;border-radius:10px;padding:12px;text-align:center}.card small{display:block;color:#64748b;margin-bottom:5px}.card b{font-size:20px;color:#3730a3}table{width:100%;border-collapse:collapse;font-size:10px}th{background:#eef2ff;color:#3730a3}th,td{border:1px solid #dbe3ef;padding:8px;text-align:left;vertical-align:middle}@media print{body{padding:0}.actions{display:none}tr{break-inside:avoid}}</style></head><body><div class="actions"><button onclick="window.print()">⬇ PDF 파일로 저장 / 인쇄</button><button onclick="window.close()" style="background:#64748b">닫기</button></div><h1>${esc(title)}</h1><div class="sub">생성일: ${new Date().toLocaleString('ko-KR')} · 총 ${records.length}건</div><div class="cards"><div class="card"><small>전체 평균</small><b>${avg(records,r=>r.total)}점</b></div>${CATS.map((c,i)=>`<div class="card"><small>${esc(c.name)}</small><b>${avg(records,r=>r.catScores[i])}</b></div>`).join('')}</div><table><thead><tr><th>검사일시</th><th>학교</th><th>학년/반</th><th>학생명</th><th>총점</th>${CATS.map(c=>`<th>${esc(c.name)}</th>`).join('')}</tr></thead><tbody>${rows}</tbody></table></body></html>`;
+}
+function openReportWindow(records,title){const w=window.open('','_blank');if(!w){alert('팝업이 차단되었습니다. 브라우저에서 팝업 허용 후 다시 눌러 주세요.');return;}w.document.open();w.document.write(adminReportHtml(records,title));w.document.close();}
+function openAdminStudentReport(attemptId){
+  const r=adminRecords.find(x=>x.attemptId===attemptId);if(!r){showToast('결과를 찾지 못했습니다.');return;}
+  if(r.answers&&r.answers.length===36&&r.answers.every(v=>v>=1&&v<=5)){
+    const w=window.open('','_blank');if(!w){alert('팝업이 차단되었습니다. 브라우저에서 팝업 허용 후 다시 눌러 주세요.');return;}
+    const oldInfo=info,oldAns=ans,oldDate=dateStr;
+    try{info={school:r.school||'학교 미입력',grade:r.grade||'학년 미입력',name:r.name||'학생'};ans=r.answers.slice();dateStr=r.date?String(r.date).slice(0,10).replace(/-/g,'.'):displayDate(r).slice(0,10);const html=downloadResult(true);w.document.open();w.document.write(html);w.document.close();}
+    finally{info=oldInfo;ans=oldAns;dateStr=oldDate;}
+    return;
+  }
+  openReportWindow([r],`${r.name||'학생'} 학습습관 전체 요약 결과지`);showToast('이전 자료는 문항 응답값이 없어 요약형으로 열었습니다.');
+}
+function printFilteredSummary(){if(!filteredAdminRecords.length){showToast('다운로드할 결과가 없습니다.');return;}openReportWindow(filteredAdminRecords,'학습습관 검사 전체 요약 결과');}
 
 function showInAppBrowserNotice(){
   const ua=navigator.userAgent||'';
