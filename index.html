@@ -24,6 +24,20 @@ html,body{height:100%;font-family:'Malgun Gothic','맑은 고딕',Apple SD Gothi
 .ic input:focus{border-color:#4F46E5}
 .sb{width:100%;padding:14px;background:linear-gradient(135deg,#4F46E5,#7C3AED);color:#fff;border:none;border-radius:12px;font-size:16px;font-weight:800;cursor:pointer;font-family:inherit}
 .qc{color:rgba(255,255,255,.65);font-size:12px;text-align:center}
+.admin-entry{border:1px solid rgba(255,255,255,.42);background:rgba(255,255,255,.12);color:#fff;border-radius:10px;padding:10px 16px;font:700 12px inherit;cursor:pointer}
+
+/* ADMIN DASHBOARD */
+#admin{height:100dvh;background:#f8fafc;overflow-y:auto}
+.ad-head{background:linear-gradient(135deg,#172554,#3730a3);color:#fff;padding:18px 20px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.ad-title{font-size:20px;font-weight:900}.ad-sub{font-size:11px;color:#c7d2fe;margin-top:3px}.ad-back{border:1px solid rgba(255,255,255,.4);background:transparent;color:#fff;padding:9px 12px;border-radius:9px;font:700 12px inherit;cursor:pointer}
+.ad-wrap{width:min(1180px,100%);margin:0 auto;padding:18px;display:grid;gap:14px}
+.ad-panel{background:#fff;border:1px solid #e2e8f0;border-radius:16px;padding:16px;box-shadow:0 6px 22px rgba(15,23,42,.05)}
+.ad-panel-title{font-size:14px;font-weight:800;margin-bottom:10px}.ad-help{font-size:11px;line-height:1.6;color:#64748b}
+.ad-actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center}.ad-btn{border:0;border-radius:9px;padding:10px 13px;background:#4f46e5;color:#fff;font:700 12px inherit;cursor:pointer}.ad-btn.secondary{background:#e0e7ff;color:#3730a3}.ad-btn.green{background:#047857}.ad-btn.danger{background:#fff1f2;color:#be123c}.ad-file{display:none}
+.ad-filters{display:grid;grid-template-columns:repeat(4,minmax(120px,1fr));gap:9px}.ad-filters select,.ad-filters input{width:100%;border:1px solid #cbd5e1;border-radius:9px;padding:10px;font:12px inherit;background:#fff;color:#1e293b}
+.ad-cards{display:grid;grid-template-columns:repeat(6,1fr);gap:9px}.ad-card{background:#fff;border:1px solid #e2e8f0;border-radius:13px;padding:13px;min-width:0}.ad-card-label{font-size:10px;color:#64748b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.ad-card-value{font-size:22px;font-weight:900;margin-top:4px}.ad-card-unit{font-size:10px;color:#94a3b8;margin-left:2px}
+.ad-table-wrap{overflow:auto;border:1px solid #e2e8f0;border-radius:12px}.ad-table{width:100%;border-collapse:collapse;min-width:1020px;font-size:11px}.ad-table th{position:sticky;top:0;background:#eef2ff;color:#3730a3;text-align:left;padding:10px 9px;white-space:nowrap}.ad-table td{padding:10px 9px;border-top:1px solid #f1f5f9;white-space:nowrap}.ad-table tbody tr:hover{background:#f8fafc}.delta{font-weight:800}.delta.up{color:#059669}.delta.down{color:#dc2626}.delta.same{color:#64748b}.ad-empty{text-align:center;color:#94a3b8;padding:32px!important}.ad-status{font-size:11px;color:#64748b;margin-left:auto}
+@media(max-width:760px){.ad-filters{grid-template-columns:1fr 1fr}.ad-cards{grid-template-columns:repeat(2,1fr)}.ad-wrap{padding:12px}.ad-head{padding:14px}.ad-status{width:100%;margin:2px 0 0}.ad-actions{align-items:stretch}.ad-btn{flex:1}}
 
 /* SURVEY */
 #survey{background:#f1f5f9}
@@ -142,6 +156,7 @@ html,body{height:100%;font-family:'Malgun Gothic','맑은 고딕',Apple SD Gothi
       <button class="sb" onclick="startSurvey()">검사 시작하기 →</button>
     </div>
     <div class="qc">총 36문항 · 약 5~7분 소요</div>
+    <button class="admin-entry" onclick="openAdmin()">⚙ 관리자 모드</button>
   </div>
 </div>
 
@@ -183,10 +198,46 @@ html,body{height:100%;font-family:'Malgun Gothic','맑은 고딕',Apple SD Gothi
   </div>
 </div>
 
+<div class="screen" id="admin">
+  <header class="ad-head">
+    <div><div class="ad-title">학습습관 관리자 대시보드</div><div class="ad-sub">저장 결과 통계 · 학생별 변화 추적</div></div>
+    <button class="ad-back" onclick="showScreen('intro')">← 학생 검사로</button>
+  </header>
+  <main class="ad-wrap">
+    <section class="ad-panel">
+      <div class="ad-panel-title">결과 데이터 불러오기</div>
+      <div class="ad-actions">
+        <button class="ad-btn" onclick="document.getElementById('admin-file').click()">JSON / CSV 파일 선택</button>
+        <input class="ad-file" id="admin-file" type="file" accept=".json,.csv,application/json,text/csv" onchange="importAdminFile(event)">
+        <button class="ad-btn secondary" onclick="loadSampleData()">샘플 데이터 보기</button>
+        <button class="ad-btn green" onclick="downloadAdminCSV()">CSV 다운로드</button>
+        <button class="ad-btn danger" onclick="clearAdminData()">불러온 데이터 지우기</button>
+        <span class="ad-status" id="admin-status">데이터 0건</span>
+      </div>
+      <p class="ad-help" style="margin-top:9px">JSON 배열 또는 CSV를 지원합니다. 권장 필드: school, grade, name, timestamp, attemptId, total, pct, level, catScores. 이 기기에서 저장한 검사 결과도 자동으로 표시됩니다.</p>
+    </section>
+    <section class="ad-panel">
+      <div class="ad-panel-title">검색 및 필터</div>
+      <div class="ad-filters">
+        <select id="filter-school" onchange="applyAdminFilters()"><option value="">전체 학교</option></select>
+        <select id="filter-grade" onchange="applyAdminFilters()"><option value="">전체 학년/반</option></select>
+        <input id="filter-name" type="search" placeholder="학생명 검색" oninput="applyAdminFilters()">
+        <select id="filter-sort" onchange="applyAdminFilters()"><option value="newest">최근 검사순</option><option value="name">학생명순</option><option value="score">총점 높은순</option></select>
+      </div>
+    </section>
+    <section class="ad-cards" id="admin-cards"></section>
+    <section class="ad-panel">
+      <div class="ad-panel-title">학생별 검사 결과 <span id="admin-count" style="color:#6366f1"></span></div>
+      <div class="ad-table-wrap"><table class="ad-table"><thead><tr><th>검사일시</th><th>학교</th><th>학년/반</th><th>학생명</th><th>총점</th><th>이전 대비</th><th>학습동기</th><th>계획성</th><th>집중력</th><th>기억력</th><th>학습전략</th><th>수준</th><th>attemptId</th></tr></thead><tbody id="admin-tbody"></tbody></table></div>
+    </section>
+  </main>
+</div>
+
 <div id="toast"></div>
 
 <script>
 const SCRIPT_URL='https://script.google.com/macros/s/AKfycbx8ONyHzKs9UlY15aZZv6XLsphB_Tpv3mnodKODwrF2E94v2hlZTMY22T249vqZo4jdlg/exec';
+const LOCAL_RESULTS_KEY='learningHabitResultsV2';
 
 const CATS=[
   {id:'motivation',name:'학습 동기 및 적극성',icon:'🔥',color:'#4F46E5',qs:[1,2,3,4,5,6,7,8],max:40,
@@ -714,6 +765,68 @@ body{font-family:'Malgun Gothic','맑은 고딕',Apple SD Gothic Neo,sans-serif;
   document.close();
 }
 
+// ── ADMIN DASHBOARD ──────────────────────────────────────────
+let adminRecords=[];
+let filteredAdminRecords=[];
+
+function esc(v){return String(v??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));}
+function makeAttemptId(){return 'ATT-'+Date.now().toString(36).toUpperCase()+'-'+Math.random().toString(36).slice(2,7).toUpperCase();}
+function parseDateValue(v){
+  if(!v)return 0;
+  const d=new Date(v); if(!Number.isNaN(d.getTime()))return d.getTime();
+  const m=String(v).match(/(\d{4})[.\/-]\s*(\d{1,2})[.\/-]\s*(\d{1,2})/);return m?new Date(+m[1],+m[2]-1,+m[3]).getTime():0;
+}
+function readField(r,keys,fallback=''){for(const k of keys){if(r[k]!==undefined&&r[k]!==null&&r[k]!=='')return r[k];}return fallback;}
+function parseCatScores(r){
+  let raw=readField(r,['catScores','categoryScores','영역별점수'],null);
+  if(typeof raw==='string'){try{raw=JSON.parse(raw);}catch(e){raw=raw.split(/[|;/]/).map(Number);}}
+  if(raw&& !Array.isArray(raw) && typeof raw==='object') raw=CATS.map(c=>Number(raw[c.id]??raw[c.name]??0));
+  if(!Array.isArray(raw))raw=[readField(r,['motivation','학습동기','학습 동기 및 적극성'],0),readField(r,['planning','계획성','학습 계획성 및 조직성'],0),readField(r,['concentration','집중력','학습 집중력'],0),readField(r,['memory','기억력','학습 기억력'],0),readField(r,['strategy','학습전략','학습 전략'],0)];
+  return CATS.map((_,i)=>Number(raw[i])||0);
+}
+function normalizeRecord(r,i=0){
+  const catScores=parseCatScores(r);let total=Number(readField(r,['total','총점'],catScores.reduce((a,b)=>a+b,0)))||0;
+  let pct=Number(readField(r,['pct','percent','percentage','백분율'],Math.round(total/180*100)))||0;
+  const timestamp=String(readField(r,['timestamp','createdAt','datetime','검사일시','date','날짜'],''));
+  return {school:String(readField(r,['school','학교','학교명'],'')),grade:String(readField(r,['grade','class','학년반','학년/반'],'')),name:String(readField(r,['name','studentName','학생명','이름'],'')),date:String(readField(r,['date','날짜'],timestamp)),timestamp:timestamp||String(readField(r,['date','날짜'],'')),attemptId:String(readField(r,['attemptId','attempt_id','검사ID'],`IMPORTED-${i+1}`)),total,pct,level:String(readField(r,['level','수준'],pct>=79?'우수':pct>=62?'양호':pct>=46?'부족':'매우부족')),catScores};
+}
+function getLocalRecords(){try{return JSON.parse(localStorage.getItem(LOCAL_RESULTS_KEY)||'[]').map(normalizeRecord);}catch(e){return [];}}
+function openAdmin(){adminRecords=getLocalRecords();renderAdmin();showScreen('admin');}
+function storeLocalResult(payload){
+  try{const list=JSON.parse(localStorage.getItem(LOCAL_RESULTS_KEY)||'[]');list.push(payload);localStorage.setItem(LOCAL_RESULTS_KEY,JSON.stringify(list.slice(-500)));}catch(e){console.warn('로컬 결과 저장 실패',e);}
+}
+function csvRows(text){
+  const rows=[];let row=[],cell='',quoted=false;
+  for(let i=0;i<text.length;i++){const ch=text[i],next=text[i+1];if(ch==='"'){if(quoted&&next==='"'){cell+='"';i++;}else quoted=!quoted;}else if(ch===','&&!quoted){row.push(cell);cell='';}else if((ch==='\n'||ch==='\r')&&!quoted){if(ch==='\r'&&next==='\n')i++;row.push(cell);if(row.some(v=>v.trim()!==''))rows.push(row);row=[];cell='';}else cell+=ch;}
+  row.push(cell);if(row.some(v=>v.trim()!==''))rows.push(row);return rows;
+}
+function parseCSV(text){const rows=csvRows(text.replace(/^\uFEFF/,''));if(rows.length<2)return[];const heads=rows[0].map(h=>h.trim());return rows.slice(1).map(row=>Object.fromEntries(heads.map((h,i)=>[h,row[i]??''])));}
+function importAdminFile(ev){
+  const file=ev.target.files[0];if(!file)return;const reader=new FileReader();reader.onload=()=>{try{let data=file.name.toLowerCase().endsWith('.json')?JSON.parse(reader.result):parseCSV(reader.result);if(!Array.isArray(data))data=data.results||data.data||data.records||[];if(!Array.isArray(data))throw new Error('배열 형식이 아닙니다.');adminRecords=data.map(normalizeRecord);renderAdmin();showToast(`${adminRecords.length}건을 불러왔습니다.`);}catch(e){alert('파일을 읽지 못했습니다. JSON 배열 또는 헤더가 있는 CSV인지 확인해 주세요.');}ev.target.value='';};reader.readAsText(file,'UTF-8');
+}
+function loadSampleData(){
+  const base=Date.now(),students=[['한빛중학교','2학년 1반','김민준'],['한빛중학교','2학년 1반','이서윤'],['한빛중학교','2학년 2반','박지호'],['새봄고등학교','1학년 3반','최하은']];const rows=[];
+  students.forEach((s,si)=>{const attempts=si<3?2:1;for(let a=0;a<attempts;a++){const cats=[25+si+a*2,20+si+a,20+si+a*2,19+si+a,18+si+a];const total=cats.reduce((x,y)=>x+y,0);const timestamp=new Date(base-(attempts-1-a)*21*86400000-si*86400000).toISOString();rows.push(normalizeRecord({school:s[0],grade:s[1],name:s[2],timestamp,date:timestamp.slice(0,10),attemptId:`SAMPLE-${si+1}-${a+1}`,total,pct:Math.round(total/180*100),catScores:cats},rows.length));}});adminRecords=rows;renderAdmin();showToast('샘플 데이터를 불러왔습니다.');
+}
+function clearAdminData(){adminRecords=[];renderAdmin();}
+function fillSelect(id,values,label){const el=document.getElementById(id),old=el.value;el.innerHTML=`<option value="">전체 ${label}</option>`+[...new Set(values.filter(Boolean))].sort().map(v=>`<option value="${esc(v)}">${esc(v)}</option>`).join('');if([...el.options].some(o=>o.value===old))el.value=old;}
+function applyAdminFilters(){
+  const school=document.getElementById('filter-school').value,grade=document.getElementById('filter-grade').value,q=document.getElementById('filter-name').value.trim().toLowerCase(),sort=document.getElementById('filter-sort').value;
+  filteredAdminRecords=adminRecords.filter(r=>(!school||r.school===school)&&(!grade||r.grade===grade)&&(!q||r.name.toLowerCase().includes(q)));
+  filteredAdminRecords.sort((a,b)=>sort==='name'?a.name.localeCompare(b.name,'ko'):sort==='score'?b.total-a.total:parseDateValue(b.timestamp||b.date)-parseDateValue(a.timestamp||a.date));renderAdminSummary();renderAdminTable();
+}
+function renderAdmin(){fillSelect('filter-school',adminRecords.map(r=>r.school),'학교');fillSelect('filter-grade',adminRecords.map(r=>r.grade),'학년/반');document.getElementById('admin-status').textContent=`데이터 ${adminRecords.length}건`;applyAdminFilters();}
+function avg(list,getter){return list.length?(list.reduce((s,r)=>s+getter(r),0)/list.length).toFixed(1):'-';}
+function renderAdminSummary(){const values=[['전체 평균',avg(filteredAdminRecords,r=>r.total),'점'],...CATS.map((c,i)=>[c.name.replace('학습 ','').replace(' 및 적극성','').replace(' 및 조직성',''),avg(filteredAdminRecords,r=>r.catScores[i]),'점'])];document.getElementById('admin-cards').innerHTML=values.map((v,i)=>`<div class="ad-card" style="border-top:3px solid ${i?CATS[i-1].color:'#172554'}"><div class="ad-card-label">${esc(v[0])}</div><div class="ad-card-value">${v[1]}<span class="ad-card-unit">${v[2]}</span></div></div>`).join('');}
+function studentKey(r){return [r.school,r.grade,r.name].join('|').toLowerCase();}
+function previousTotals(){const groups={};adminRecords.forEach(r=>(groups[studentKey(r)]??=[]).push(r));const prev=new Map();Object.values(groups).forEach(list=>{list.sort((a,b)=>parseDateValue(a.timestamp||a.date)-parseDateValue(b.timestamp||b.date));list.forEach((r,i)=>prev.set(r,i?list[i-1].total:null));});return prev;}
+function displayDate(r){const t=parseDateValue(r.timestamp||r.date);return t?new Date(t).toLocaleString('ko-KR',{year:'2-digit',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}):(r.date||'-');}
+function renderAdminTable(){
+  const prev=previousTotals();document.getElementById('admin-count').textContent=`${filteredAdminRecords.length}건`;document.getElementById('admin-tbody').innerHTML=filteredAdminRecords.length?filteredAdminRecords.map(r=>{const p=prev.get(r),d=p===null||p===undefined?null:r.total-p,dc=d>0?'up':d<0?'down':'same',dt=d===null?'첫 검사':`${d>0?'+':''}${d}점`;return`<tr><td>${esc(displayDate(r))}</td><td>${esc(r.school||'-')}</td><td>${esc(r.grade||'-')}</td><td><b>${esc(r.name||'-')}</b></td><td><b>${r.total}</b> / 180</td><td class="delta ${dc}">${dt}</td>${r.catScores.map((s,i)=>`<td>${s} / ${CATS[i].max}</td>`).join('')}<td>${esc(r.level)}</td><td>${esc(r.attemptId)}</td></tr>`;}).join(''):'<tr><td class="ad-empty" colspan="13">표시할 결과가 없습니다. 파일을 불러오거나 샘플 데이터를 선택해 주세요.</td></tr>';
+}
+function csvEscape(v){const s=String(v??'');return /[",\n\r]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s;}
+function downloadAdminCSV(){if(!filteredAdminRecords.length){showToast('다운로드할 데이터가 없습니다.');return;}const heads=['timestamp','date','school','grade','name','attemptId','total','pct','level','motivation','planning','concentration','memory','strategy'];const lines=[heads.join(','),...filteredAdminRecords.map(r=>[r.timestamp,r.date,r.school,r.grade,r.name,r.attemptId,r.total,r.pct,r.level,...r.catScores].map(csvEscape).join(','))];const blob=new Blob(['\uFEFF'+lines.join('\r\n')],{type:'text/csv;charset=utf-8'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`학습습관_결과_${new Date().toISOString().slice(0,10)}.csv`;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),500);}
+
 // ── SAVE RESULT TO SERVER ────────────────────────────────────
 function saveResult(){
   const btn = document.getElementById('save-result-btn');
@@ -729,6 +842,7 @@ function saveResult(){
   const catScores  = CATS.map(cat=>cat.qs.reduce((s,q)=>s+ans[q-1],0));
   const catLevels  = catScores.map((sc,i)=>getLevel(CATS[i],sc));
 
+  const timestamp = new Date().toISOString();
   const payload = {
     school    : info.school,
     grade     : info.grade,
@@ -739,8 +853,12 @@ function saveResult(){
     level     : lvl,
     catScores : catScores,
     catLevels : catLevels,
-    answers   : ans
+    answers   : ans,
+    timestamp : timestamp,
+    attemptId : makeAttemptId()
   };
+
+  storeLocalResult(payload);
 
   btn.disabled = true;
   btn.textContent = '⏳ 저장 중...';
