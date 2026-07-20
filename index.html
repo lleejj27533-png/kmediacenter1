@@ -193,7 +193,7 @@ html,body{height:100%;font-family:'Malgun Gothic','맑은 고딕',Apple SD Gothi
   </div>
   <div class="rb" id="result-body"></div>
   <div class="ra">
-    <button class="abt dl-btn" onclick="downloadResult()">📄 결과지 보기 / PDF 저장</button>
+    <button class="abt dl-btn" onclick="downloadResult()">📄 1. 전체 결과보고서 열기</button>
     <button class="abt" id="save-result-btn" onclick="saveResult()" style="background:linear-gradient(135deg,#059669,#10b981);color:#fff">☁️ 결과 저장하기 (관리자 전송)</button>
     <button class="abt print-btn2" onclick="window.print()">🖨️ 인쇄 / PDF 저장</button>
     <button class="abt retry-btn2" onclick="restartSurvey()">↺ 처음부터 다시 하기</button>
@@ -606,7 +606,7 @@ body{font-family:'Malgun Gothic','맑은 고딕',Apple SD Gothic Neo,sans-serif;
   padding:10px 12px max(10px,env(safe-area-inset-bottom));
   box-shadow:0 -4px 20px rgba(0,0,0,.25);
 }
-.save-actions{max-width:800px;margin:0 auto;display:grid;grid-template-columns:repeat(3,1fr);gap:7px}
+.save-actions{max-width:800px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr;gap:7px}
 .save-bar-btn{
   width:100%;min-height:48px;padding:9px 5px;
   background:linear-gradient(135deg,#4F46E5,#7C3AED);
@@ -671,11 +671,10 @@ body{font-family:'Malgun Gothic','맑은 고딕',Apple SD Gothic Neo,sans-serif;
 <!-- 모바일 고정 저장 버튼 -->
 <div class="save-bar no-print">
   <div class="save-actions">
-    <button class="save-bar-btn" id="pdf-save-btn" onclick="downloadPdfFile()">📄 PDF 바로 받기</button>
-    <button class="save-bar-btn share" onclick="shareReport()">📤 공유</button>
-    <button class="save-bar-btn file" onclick="saveAndPreviewReport()">⬇️ 저장·바로보기</button>
+    <button class="save-bar-btn" id="pdf-save-btn" onclick="downloadPdfFile()">⬇️ 2. PDF 파일 저장</button>
+    <button class="save-bar-btn share" id="pdf-share-btn" onclick="sharePdfFile()">📤 PDF 파일 공유</button>
   </div>
-  <div class="save-note">한 번 누르면 PDF가 새 화면에 자동으로 열립니다. 학생은 열린 화면의 ⬇ 버튼만 누르면 됩니다.</div>
+  <div class="save-note">저장은 다운로드 폴더에 보관하고, 공유는 카카오톡 등으로 PDF 문서를 보냅니다.</div>
 </div>
 
 <div class="doc">
@@ -791,8 +790,8 @@ async function ensurePdfTool(){
   for(const src of urls){try{await new Promise((resolve,reject)=>{const s=document.createElement('script');s.src=src;s.onload=resolve;s.onerror=reject;document.head.appendChild(s)});if(typeof html2pdf!=='undefined')return true;}catch(e){}}
   return false;
 }
-async function downloadPdfFile(){
-  const btn=document.getElementById('pdf-save-btn');
+async function downloadPdfFile(mode='save'){
+  const btn=document.getElementById(mode==='share'?'pdf-share-btn':'pdf-save-btn');
   const ua=navigator.userAgent||'',mobile=/Android|iPhone|iPad|iPod/i.test(ua);
   if(!mobile){window.print();return;}
   const old=btn.textContent;btn.disabled=true;btn.textContent='⏳ PDF 도구 확인 중';
@@ -802,11 +801,28 @@ async function downloadPdfFile(){
   const options={margin:[7,7,9,7],filename:reportFileName()+'.pdf',image:{type:'jpeg',quality:mobile ? .88 : .95},html2canvas:{scale:mobile ? 1.05 : 1.55,useCORS:true,backgroundColor:'#ffffff',scrollX:0,scrollY:0,width:680,windowWidth:680,letterRendering:true},jsPDF:{unit:'mm',format:'a4',orientation:'portrait',compress:true},pagebreak:{mode:['avoid-all','css','legacy'],avoid:['.hd','.sec-title','.cat-row','.fb-box','.cat-fb','.action','.insight','.closing','.sig-row','.sig-box']}};
   try{
     const blob=await html2pdf().set(options).from(source).outputPdf('blob'),name=reportFileName()+'.pdf',url=URL.createObjectURL(blob);
-    if(mobile){btn.textContent='✅ PDF 생성 완료';btn.disabled=false;showPdfSavePanel(url,name,blob);setTimeout(()=>{btn.textContent=old},1800);return;}
+    if(mobile&&mode==='share'){
+      try{
+        const file=new File([blob],name,{type:'application/pdf'});
+        if(!navigator.share||!navigator.canShare||!navigator.canShare({files:[file]}))throw new Error('file-share-not-supported');
+        btn.textContent='📤 공유창 여는 중...';await navigator.share({files:[file]});btn.textContent='✅ 공유 완료';btn.disabled=false;setTimeout(()=>{btn.textContent=old;URL.revokeObjectURL(url)},1500);return;
+      }catch(e){
+        if(e&&e.name==='AbortError'){btn.textContent=old;btn.disabled=false;URL.revokeObjectURL(url);return;}
+        const a=document.createElement('a');a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();btn.textContent=old;btn.disabled=false;
+        setTimeout(()=>URL.revokeObjectURL(url),60000);alert('이 브라우저에서는 바로 공유할 수 없어 PDF를 다운로드했습니다. 다운로드 폴더의 PDF 파일을 선택해 공유해 주세요.');return;
+      }
+    }
+    if(mobile){
+      const a=document.createElement('a');a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();
+      btn.textContent='✅ PDF 저장 완료';btn.disabled=false;
+      setTimeout(()=>{alert('PDF 파일을 저장했습니다. 휴대폰의 다운로드 폴더에서 확인하세요.');btn.textContent=old;URL.revokeObjectURL(url)},300);
+      return;
+    }
     const a=document.createElement('a');a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();btn.textContent='✅ PDF 저장 완료';
     setTimeout(()=>{URL.revokeObjectURL(url);btn.textContent=old;btn.disabled=false},60000);
   }catch(e){console.error(e);btn.textContent=old;btn.disabled=false;alert('PDF 생성에 실패했습니다. 관리자에게 화면을 보여 주세요.');}
 }
+function sharePdfFile(){downloadPdfFile('share');}
 async function shareReport(){
   const blob=new Blob([printableHtml()],{type:'text/html;charset=utf-8'}),file=new File([blob],reportFileName()+'.html',{type:'text/html'});
   try{if(navigator.canShare&&navigator.canShare({files:[file]})){await navigator.share({title:'학습습관 검사 결과',text:'${info.name} 학생의 학습습관 검사 결과입니다.',files:[file]});return;}if(navigator.share){await navigator.share({title:'학습습관 검사 결과',text:'${info.name} 학생의 학습습관 검사 결과입니다.'});return;}throw new Error('unsupported');}catch(e){if(e.name!=='AbortError'){downloadReportFile();alert('공유 기능을 지원하지 않는 브라우저라 결과 파일로 저장했습니다.');}}
@@ -934,7 +950,7 @@ function autoOpenChromeForPdfSupport(){
   if(android&&inApp){window.location.href='intent://lleejj27533-png.github.io/kmediacenter1/student-v12.html#Intent;scheme=https;package=com.android.chrome;end';}
 }
 setTimeout(autoOpenChromeForPdfSupport,300);
-setTimeout(()=>{if(!/Android|iPhone|iPad|iPod/i.test(navigator.userAgent||'')){const b=document.getElementById('pdf-save-btn');if(b)b.textContent='🖨️ PDF 저장·인쇄';}},300);
+setTimeout(()=>{if(!/Android|iPhone|iPad|iPod/i.test(navigator.userAgent||'')){const b=document.getElementById('pdf-save-btn');if(b)b.textContent='🖨️ 2. PDF 저장·인쇄';}},300);
 
 // ── SAVE RESULT TO SERVER ────────────────────────────────────
 function saveResult(auto=false){
