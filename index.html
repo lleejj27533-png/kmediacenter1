@@ -753,12 +753,12 @@ function showPdfSavePanel(url,name,blob){
   generatedPdfUrl=url;try{generatedPdfFile=new File([blob],name,{type:'application/pdf'});}catch(e){generatedPdfFile=null;}
   const old=document.getElementById('pdf-save-panel');if(old)old.remove();
   const panel=document.createElement('div');panel.id='pdf-save-panel';panel.className='no-print';panel.style.cssText='position:fixed;inset:0;z-index:9999;background:rgba(15,23,42,.88);padding:20px;display:flex;align-items:center;justify-content:center';
-  const canShare=!!(generatedPdfFile&&navigator.canShare&&navigator.canShare({files:[generatedPdfFile]}));
+  const ua=navigator.userAgent||'',inApp=['KAKAOTALK','NAVER','FBAN','FBAV','Instagram','Line/'].some(k=>ua.includes(k)),canShare=!!(generatedPdfFile&&navigator.canShare&&navigator.canShare({files:[generatedPdfFile]}));
   panel.innerHTML='<div style="width:min(430px,100%);background:#fff;border-radius:18px;padding:22px 18px;box-shadow:0 20px 60px rgba(0,0,0,.35);font-family:inherit">'+
     '<div style="font-size:20px;font-weight:900;color:#1e293b;margin-bottom:7px">✅ PDF 생성 완료</div>'+
     '<div style="font-size:12px;line-height:1.7;color:#64748b;margin-bottom:15px">아래 첫 번째 버튼을 직접 눌러 저장하세요. 셀룰러 다운로드 확인창이 나오면 <b>다운로드</b>를 선택하세요.</div>'+
     '<a href="'+url+'" download="'+name+'" style="display:flex;align-items:center;justify-content:center;width:100%;padding:15px;background:linear-gradient(135deg,#4f46e5,#7c3aed);color:#fff;border-radius:12px;text-decoration:none;font-size:15px;font-weight:900;margin-bottom:8px">⬇ 1. PDF 파일 다운로드</a>'+
-    '<a href="'+url+'" target="_blank" rel="noopener" style="display:flex;align-items:center;justify-content:center;width:100%;padding:13px;background:#e0f2fe;color:#0369a1;border-radius:12px;text-decoration:none;font-size:13px;font-weight:800;margin-bottom:8px">👁 2. PDF 미리보기</a>'+
+    '<a href="'+url+'" target="'+(inApp?'_self':'_blank')+'" rel="noopener" style="display:flex;align-items:center;justify-content:center;width:100%;padding:13px;background:#e0f2fe;color:#0369a1;border-radius:12px;text-decoration:none;font-size:13px;font-weight:800;margin-bottom:8px">👁 2. PDF 미리보기</a>'+
     (canShare?'<button onclick="shareGeneratedPdf()" style="width:100%;padding:13px;background:#d1fae5;color:#047857;border:0;border-radius:12px;font-size:13px;font-weight:800;margin-bottom:8px">📤 3. 공유·파일에 저장</button>':'')+
     '<button onclick="closePdfSavePanel()" style="width:100%;padding:11px;background:#f1f5f9;color:#64748b;border:0;border-radius:10px;font-size:12px;font-weight:700">닫기</button></div>';
   document.body.appendChild(panel);
@@ -773,19 +773,18 @@ async function ensurePdfTool(){
 }
 async function downloadPdfFile(){
   const btn=document.getElementById('pdf-save-btn');
-  const ua=navigator.userAgent||'',mobile=/Android|iPhone|iPad|iPod/i.test(ua),inApp=['KAKAOTALK','NAVER','FBAN','FBAV','Instagram','Line/'].some(k=>ua.includes(k)),pdfWindow=mobile&&!inApp?window.open('','_blank'):null;
-  if(pdfWindow){pdfWindow.document.open();pdfWindow.document.write('<meta name="viewport" content="width=device-width"><div style="font-family:sans-serif;padding:48px 20px;text-align:center;color:#334155"><div style="font-size:34px;margin-bottom:14px">⏳</div><b>PDF를 만들고 있습니다</b><br><span style="font-size:12px;color:#64748b">잠시만 기다려 주세요. 이 화면을 닫지 마세요.</span></div>');pdfWindow.document.close();}
+  const ua=navigator.userAgent||'',mobile=/Android|iPhone|iPad|iPod/i.test(ua);
   const old=btn.textContent;btn.disabled=true;btn.textContent='⏳ PDF 도구 확인 중';
-  if(!(await ensurePdfTool())){if(pdfWindow&&!pdfWindow.closed)pdfWindow.close();btn.textContent=old;btn.disabled=false;alert('PDF 생성 파일을 찾지 못했습니다. 관리자에게 알려 주세요.');return;}
+  if(!(await ensurePdfTool())){btn.textContent=old;btn.disabled=false;alert('PDF 생성 파일을 찾지 못했습니다. 관리자에게 알려 주세요.');return;}
   const source=document.querySelector('.doc').cloneNode(true);source.querySelectorAll('.no-print').forEach(el=>el.remove());source.style.maxWidth='760px';source.style.margin='0 auto';source.style.padding='18px';source.style.background='#fff';
   btn.textContent='⏳ PDF 생성 중';
   const options={margin:[8,8,10,8],filename:reportFileName()+'.pdf',image:{type:'jpeg',quality:mobile ? .88 : .95},html2canvas:{scale:mobile ? 1.05 : 1.6,useCORS:true,backgroundColor:'#ffffff',scrollY:0,windowWidth:760},jsPDF:{unit:'mm',format:'a4',orientation:'portrait',compress:true},pagebreak:{mode:['css','legacy'],avoid:['.cat-row','.action','.insight','.sig-row']}};
   try{
     const blob=await html2pdf().set(options).from(source).outputPdf('blob'),name=reportFileName()+'.pdf',url=URL.createObjectURL(blob);
-    if(mobile){btn.textContent='✅ PDF 생성 완료';btn.disabled=false;if(pdfWindow&&!pdfWindow.closed){pdfWindow.location.replace(url);}else{showPdfSavePanel(url,name,blob);}setTimeout(()=>{btn.textContent=old},1800);return;}
+    if(mobile){btn.textContent='✅ PDF 생성 완료';btn.disabled=false;showPdfSavePanel(url,name,blob);setTimeout(()=>{btn.textContent=old},1800);return;}
     const a=document.createElement('a');a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();btn.textContent='✅ PDF 저장 완료';
     setTimeout(()=>{URL.revokeObjectURL(url);btn.textContent=old;btn.disabled=false},60000);
-  }catch(e){console.error(e);if(pdfWindow&&!pdfWindow.closed)pdfWindow.close();btn.textContent=old;btn.disabled=false;alert('PDF 생성에 실패했습니다. 관리자에게 화면을 보여 주세요.');}
+  }catch(e){console.error(e);btn.textContent=old;btn.disabled=false;alert('PDF 생성에 실패했습니다. 관리자에게 화면을 보여 주세요.');}
 }
 async function shareReport(){
   const blob=new Blob([printableHtml()],{type:'text/html;charset=utf-8'}),file=new File([blob],reportFileName()+'.html',{type:'text/html'});
@@ -877,7 +876,7 @@ function showInAppBrowserNotice(){
   box.innerHTML='<div style="width:min(400px,100%);background:#fff;border-radius:18px;padding:24px 18px;text-align:center;font-family:inherit"><div style="font-size:34px;margin-bottom:10px">🌐</div><div style="font-size:19px;font-weight:900;color:#1e293b;margin-bottom:8px">Chrome에서 검사를 시작해 주세요</div><div style="font-size:12px;line-height:1.7;color:#64748b;margin-bottom:16px">카카오톡·앱 내부 브라우저는 PDF 저장을 제한합니다. 검사 전에 아래 버튼을 한 번만 누르세요.</div><a href="intent://lleejj27533-png.github.io/kmediacenter1/?v=5#Intent;scheme=https;package=com.android.chrome;end" style="display:block;padding:15px;background:linear-gradient(135deg,#4f46e5,#7c3aed);color:#fff;text-decoration:none;border-radius:12px;font-size:15px;font-weight:900">Chrome으로 열기</a><button id="inapp-continue" style="margin-top:9px;width:100%;padding:10px;background:#f1f5f9;color:#64748b;border:0;border-radius:9px;font-size:11px">현재 브라우저에서 계속</button></div>';
   document.body.appendChild(box);document.getElementById('inapp-continue').onclick=()=>box.remove();
 }
-setTimeout(showInAppBrowserNotice,400);
+// 앱 내부 브라우저에서도 검사는 그대로 진행하고, PDF는 현재 화면에서 생성합니다.
 
 // ── SAVE RESULT TO SERVER ────────────────────────────────────
 function saveResult(){
