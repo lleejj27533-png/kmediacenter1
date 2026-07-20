@@ -34,9 +34,11 @@ html,body{height:100%;font-family:'Malgun Gothic','맑은 고딕',Apple SD Gothi
 .ad-panel{background:#fff;border:1px solid #e2e8f0;border-radius:16px;padding:16px;box-shadow:0 6px 22px rgba(15,23,42,.05)}
 .ad-panel-title{font-size:14px;font-weight:800;margin-bottom:10px}.ad-help{font-size:11px;line-height:1.6;color:#64748b}
 .ad-actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center}.ad-btn{border:0;border-radius:9px;padding:10px 13px;background:#4f46e5;color:#fff;font:700 12px inherit;cursor:pointer}.ad-btn.secondary{background:#e0e7ff;color:#3730a3}.ad-btn.green{background:#047857}.ad-btn.danger{background:#fff1f2;color:#be123c}.ad-file{display:none}
+.ad-key{border:1px solid #cbd5e1;border-radius:9px;padding:10px 11px;font:12px inherit;min-width:150px}
 .ad-filters{display:grid;grid-template-columns:repeat(4,minmax(120px,1fr));gap:9px}.ad-filters select,.ad-filters input{width:100%;border:1px solid #cbd5e1;border-radius:9px;padding:10px;font:12px inherit;background:#fff;color:#1e293b}
 .ad-cards{display:grid;grid-template-columns:repeat(6,1fr);gap:9px}.ad-card{background:#fff;border:1px solid #e2e8f0;border-radius:13px;padding:13px;min-width:0}.ad-card-label{font-size:10px;color:#64748b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.ad-card-value{font-size:22px;font-weight:900;margin-top:4px}.ad-card-unit{font-size:10px;color:#94a3b8;margin-left:2px}
 .ad-table-wrap{overflow:auto;border:1px solid #e2e8f0;border-radius:12px}.ad-table{width:100%;border-collapse:collapse;min-width:1020px;font-size:11px}.ad-table th{position:sticky;top:0;background:#eef2ff;color:#3730a3;text-align:left;padding:10px 9px;white-space:nowrap}.ad-table td{padding:10px 9px;border-top:1px solid #f1f5f9;white-space:nowrap}.ad-table tbody tr:hover{background:#f8fafc}.delta{font-weight:800}.delta.up{color:#059669}.delta.down{color:#dc2626}.delta.same{color:#64748b}.ad-empty{text-align:center;color:#94a3b8;padding:32px!important}.ad-status{font-size:11px;color:#64748b;margin-left:auto}
+.report-open-btn{border:0;border-radius:8px;padding:7px 9px;background:#4f46e5;color:#fff;font:800 10px inherit;cursor:pointer;white-space:nowrap}
 @media(max-width:760px){.ad-filters{grid-template-columns:1fr 1fr}.ad-cards{grid-template-columns:repeat(2,1fr)}.ad-wrap{padding:12px}.ad-head{padding:14px}.ad-status{width:100%;margin:2px 0 0}.ad-actions{align-items:stretch}.ad-btn{flex:1}}
 
 /* SURVEY */
@@ -207,14 +209,17 @@ html,body{height:100%;font-family:'Malgun Gothic','맑은 고딕',Apple SD Gothi
     <section class="ad-panel">
       <div class="ad-panel-title">결과 데이터 불러오기</div>
       <div class="ad-actions">
+        <input class="ad-key" id="admin-key" type="password" placeholder="관리자 조회키">
+        <button class="ad-btn green" onclick="loadServerResults()">☁ 서버 결과 불러오기</button>
         <button class="ad-btn" onclick="document.getElementById('admin-file').click()">JSON / CSV 파일 선택</button>
         <input class="ad-file" id="admin-file" type="file" accept=".json,.csv,application/json,text/csv" onchange="importAdminFile(event)">
         <button class="ad-btn secondary" onclick="loadSampleData()">샘플 데이터 보기</button>
         <button class="ad-btn green" onclick="downloadAdminCSV()">CSV 다운로드</button>
+        <button class="ad-btn" onclick="printFilteredSummary()">📄 전체 요약 PDF 저장</button>
         <button class="ad-btn danger" onclick="clearAdminData()">불러온 데이터 지우기</button>
         <span class="ad-status" id="admin-status">데이터 0건</span>
       </div>
-      <p class="ad-help" style="margin-top:9px">JSON 배열 또는 CSV를 지원합니다. 권장 필드: school, grade, name, timestamp, attemptId, total, pct, level, catScores. 이 기기에서 저장한 검사 결과도 자동으로 표시됩니다.</p>
+      <p class="ad-help" style="margin-top:9px">학생 검사 결과는 완료 즉시 자동 저장됩니다. 관리자 조회키를 입력해 모든 기기의 결과를 불러오거나 JSON/CSV 파일을 추가할 수 있습니다.</p>
     </section>
     <section class="ad-panel">
       <div class="ad-panel-title">검색 및 필터</div>
@@ -228,7 +233,7 @@ html,body{height:100%;font-family:'Malgun Gothic','맑은 고딕',Apple SD Gothi
     <section class="ad-cards" id="admin-cards"></section>
     <section class="ad-panel">
       <div class="ad-panel-title">학생별 검사 결과 <span id="admin-count" style="color:#6366f1"></span></div>
-      <div class="ad-table-wrap"><table class="ad-table"><thead><tr><th>검사일시</th><th>학교</th><th>학년/반</th><th>학생명</th><th>총점</th><th>이전 대비</th><th>학습동기</th><th>계획성</th><th>집중력</th><th>기억력</th><th>학습전략</th><th>수준</th><th>attemptId</th></tr></thead><tbody id="admin-tbody"></tbody></table></div>
+      <div class="ad-table-wrap"><table class="ad-table"><thead><tr><th>결과지</th><th>검사일시</th><th>학교</th><th>학년/반</th><th>학생명</th><th>총점</th><th>이전 대비</th><th>학습동기</th><th>계획성</th><th>집중력</th><th>기억력</th><th>학습전략</th><th>수준</th><th>attemptId</th></tr></thead><tbody id="admin-tbody"></tbody></table></div>
     </section>
   </main>
 </div>
@@ -236,7 +241,7 @@ html,body{height:100%;font-family:'Malgun Gothic','맑은 고딕',Apple SD Gothi
 <div id="toast"></div>
 
 <script>
-const SCRIPT_URL='https://script.google.com/macros/s/AKfycbx8ONyHzKs9UlY15aZZv6XLsphB_Tpv3mnodKODwrF2E94v2hlZTMY22T249vqZo4jdlg/exec';
+const SCRIPT_URL='https://script.google.com/macros/s/AKfycbznzNzcOwz-1snLFvW4LQ09xPLKE8Umme1WGp5VLAbyuc32LYTOh4VyS8BOqGPUjxXylA/exec';
 const LOCAL_RESULTS_KEY='learningHabitResultsV2';
 
 const CATS=[
@@ -265,7 +270,7 @@ const CATS=[
 const Qs=['학습과제가 어려워도 쉽게 포기하지 않는다.','모르는 내용을 학습하는 것을 즐긴다.','노력해서 더 좋은 성적을 받을 수 있었다.','교실을 떠나기 전에 해야 할 숙제와 숙제방법을 확인한다.','공부할 때 빨리 끝내기보다는 완전한 학습정리를 하는 편이다.','계획된 공부를 잘 미루지 않는다.','나에게 좋은 성적은 중요하다.','공부할 때는 정말로 열심히 한다.','공부하기 위해 매일 일정한 시간을 정해 놓는다.','일정한 공부계획표를 가지고 있다.','학습시간이 체계적이어서 시간이 낭비되지 않는다.','매일, 공부에 우선순위를 두고 행동한다.','하루 중 공부가 잘 되는 시간을 안다.','공부하기에 충분한 시간을 만들기 쉽다.','한 과목 공부에 너무 많은 시간을 써서 다른 과목에 지장받는 일은 없다.','공부할 때 전적으로 공부에 집중한다.','과제를 시작하기 전에 얼마나 할지, 언제 끝낼지를 정한다.','공부할 때 집중할 수 있다.','공부하기 위해 대체로 조용한 장소를 찾는다.','공부할 때 잘 졸지 않는다.','공부하고 싶지 않아도 공부한다.','공상이 공부에 방해되는 일은 별로 없다.','정말 싫어서 흥미를 갖기 곤란한 과목은 없다.','매주 각 과목을 복습하기 위한 시간을 정해 놓는다.','한 과목을 공부할 때마다 얼마간의 복습시간을 정한다.','적어도 시험 전에는 노트를 복습한다.','공부한 내용에 대해 많이 기억할 수 있다.','수업 중 설명을 주의 깊게 들어서 기억을 잘한다.','공부내용을 읽기 전 주요 제목과 요약을 미리 검토한다.','책을 읽기 전에 제목을 질문으로 바꾸어 무엇을 배울지 생각한다.','교과서 한 과를 전부 읽으면 참고서 없이도 내용 파악이 잘 된다.','한 과를 다 읽기 전에도 과 끝에 있는 문제를 풀 수 있다.','읽은 후 바로 그 부분을 복습할 시간을 갖는다.','공부내용에 있는 도표·그래프·목록표를 자주 검토한다.','수업 받은 내용에 대해 잘 이야기할 수 있다.','교과서 소단락을 읽은 후 기억할 내용을 정리한다.'];
 const OPTS=['전혀 그렇지 않다','그렇지 않다','보통','그렇다','항상 그렇다'];
 
-let ans=new Array(36).fill(0),curCat=0,info={},dateStr='';
+let ans=new Array(36).fill(0),curCat=0,info={},dateStr='',currentAttemptId='',currentTimestamp='',lastSavedAttemptId='';
 
 // ── FEEDBACK TEMPLATES ─────────────────────────────────────
 const FB={
@@ -374,6 +379,7 @@ function startSurvey(){
         name:document.getElementById('inp-name').value.trim()||'학생'};
   const now=new Date();
   dateStr=`${now.getFullYear()}.${String(now.getMonth()+1).padStart(2,'0')}.${String(now.getDate()).padStart(2,'0')}`;
+  currentTimestamp=now.toISOString();currentAttemptId=makeAttemptId();lastSavedAttemptId='';
   curCat=0;ans=new Array(36).fill(0);showScreen('survey');renderCat();
 }
 
@@ -554,10 +560,11 @@ function showResults(){
     ?`<strong>📌 종합 의견</strong><br>전체 점수(${total}점)가 기준점(103점) 이하입니다. 성적·지능과 무관하게 효율적인 학습이 이루어지지 않고 있다는 의미입니다. 위에 제시된 개선 계획을 하나씩 실천해 주세요.`
     :`<strong>🎉 종합 의견</strong><br>전체 점수(${total}점)가 기준점(103점)을 넘었습니다. 부족한 영역을 꾸준히 보완하면 더욱 효율적인 학습이 가능합니다!`;
   body.appendChild(note);
+  setTimeout(()=>saveResult(true),500);
 }
 
 // ── DOWNLOAD RESULT ──────────────────────────────────────────
-function downloadResult(){
+function downloadResult(returnHtml=false){
   const total=ans.reduce((a,b)=>a+b,0);
   const pct=Math.round((total/180)*100);
   const lvl=pct>=79?'우수':pct>=62?'양호':pct>=46?'부족':'매우부족';
@@ -658,7 +665,7 @@ body{font-family:'Malgun Gothic','맑은 고딕',Apple SD Gothic Neo,sans-serif;
 .sig-lbl{font-size:9px;color:#94a3b8;margin-bottom:7px}
 .sig-line{border-bottom:1px solid #cbd5e1;height:26px;margin-bottom:2px}
 .sig-sub{font-size:8px;color:#cbd5e1;text-align:center}
-.pdf-page{break-inside:avoid;page-break-inside:avoid}.cat-row,.action,.insight,.sig-row{break-inside:avoid;page-break-inside:avoid}
+.pdf-page,.hd,.sec-title,.cat-row,.fb-box,.cat-fb,.action,.insight,.closing,.sig-row,.sig-box{break-inside:avoid!important;page-break-inside:avoid!important}
 </style></head><body>
 
 <!-- 모바일 고정 저장 버튼 -->
@@ -775,11 +782,12 @@ async function ensurePdfTool(){
 async function downloadPdfFile(){
   const btn=document.getElementById('pdf-save-btn');
   const ua=navigator.userAgent||'',mobile=/Android|iPhone|iPad|iPod/i.test(ua);
+  if(!mobile){window.print();return;}
   const old=btn.textContent;btn.disabled=true;btn.textContent='⏳ PDF 도구 확인 중';
   if(!(await ensurePdfTool())){btn.textContent=old;btn.disabled=false;alert('PDF 생성 파일을 찾지 못했습니다. 관리자에게 알려 주세요.');return;}
-  const source=document.querySelector('.doc').cloneNode(true);source.querySelectorAll('.no-print').forEach(el=>el.remove());source.style.maxWidth='760px';source.style.margin='0 auto';source.style.padding='18px';source.style.background='#fff';
+  const source=document.querySelector('.doc').cloneNode(true);source.querySelectorAll('.no-print').forEach(el=>el.remove());source.style.width='680px';source.style.maxWidth='680px';source.style.minWidth='680px';source.style.boxSizing='border-box';source.style.margin='0 auto';source.style.padding='18px';source.style.background='#fff';source.style.overflow='visible';
   btn.textContent='⏳ PDF 생성 중';
-  const options={margin:[8,8,10,8],filename:reportFileName()+'.pdf',image:{type:'jpeg',quality:mobile ? .88 : .95},html2canvas:{scale:mobile ? 1.05 : 1.6,useCORS:true,backgroundColor:'#ffffff',scrollY:0,windowWidth:760},jsPDF:{unit:'mm',format:'a4',orientation:'portrait',compress:true},pagebreak:{mode:['css','legacy'],avoid:['.cat-row','.action','.insight','.sig-row']}};
+  const options={margin:[7,7,9,7],filename:reportFileName()+'.pdf',image:{type:'jpeg',quality:mobile ? .88 : .95},html2canvas:{scale:mobile ? 1.05 : 1.55,useCORS:true,backgroundColor:'#ffffff',scrollX:0,scrollY:0,width:680,windowWidth:680,letterRendering:true},jsPDF:{unit:'mm',format:'a4',orientation:'portrait',compress:true},pagebreak:{mode:['avoid-all','css','legacy'],avoid:['.hd','.sec-title','.cat-row','.fb-box','.cat-fb','.action','.insight','.closing','.sig-row','.sig-box']}};
   try{
     const blob=await html2pdf().set(options).from(source).outputPdf('blob'),name=reportFileName()+'.pdf',url=URL.createObjectURL(blob);
     if(mobile){btn.textContent='✅ PDF 생성 완료';btn.disabled=false;showPdfSavePanel(url,name,blob);setTimeout(()=>{btn.textContent=old},1800);return;}
@@ -802,6 +810,7 @@ function saveAndPreviewReport(){
 <\/script>
 </body></html>`;
 
+  if(returnHtml)return html;
   // ── 현재 페이지를 결과지로 교체 (모바일 완벽 호환) ──────────
   document.open('text/html','replace');
   document.write(html);
@@ -831,10 +840,24 @@ function normalizeRecord(r,i=0){
   const catScores=parseCatScores(r);let total=Number(readField(r,['total','총점'],catScores.reduce((a,b)=>a+b,0)))||0;
   let pct=Number(readField(r,['pct','percent','percentage','백분율'],Math.round(total/180*100)))||0;
   const timestamp=String(readField(r,['timestamp','createdAt','datetime','검사일시','date','날짜'],''));
-  return {school:String(readField(r,['school','학교','학교명'],'')),grade:String(readField(r,['grade','class','학년반','학년/반'],'')),name:String(readField(r,['name','studentName','학생명','이름'],'')),date:String(readField(r,['date','날짜'],timestamp)),timestamp:timestamp||String(readField(r,['date','날짜'],'')),attemptId:String(readField(r,['attemptId','attempt_id','검사ID'],`IMPORTED-${i+1}`)),total,pct,level:String(readField(r,['level','수준'],pct>=79?'우수':pct>=62?'양호':pct>=46?'부족':'매우부족')),catScores};
+  let answers=readField(r,['answers','응답','응답값'],[]);if(typeof answers==='string'){try{answers=JSON.parse(answers);}catch(e){answers=answers.split(/[|,;/]/).map(Number);}}if(!Array.isArray(answers))answers=[];answers=answers.map(Number);
+  return {school:String(readField(r,['school','학교','학교명'],'')),grade:String(readField(r,['grade','class','학년반','학년/반'],'')),name:String(readField(r,['name','studentName','학생명','이름'],'')),date:String(readField(r,['date','날짜'],timestamp)),timestamp:timestamp||String(readField(r,['date','날짜'],'')),attemptId:String(readField(r,['attemptId','attempt_id','검사ID'],`IMPORTED-${i+1}`)),total,pct,level:String(readField(r,['level','수준'],pct>=79?'우수':pct>=62?'양호':pct>=46?'부족':'매우부족')),catScores,answers};
 }
 function getLocalRecords(){try{return JSON.parse(localStorage.getItem(LOCAL_RESULTS_KEY)||'[]').map(normalizeRecord);}catch(e){return [];}}
 function openAdmin(){adminRecords=getLocalRecords();renderAdmin();showScreen('admin');}
+function mergeAdminRecords(records){
+  const map=new Map();[...adminRecords,...records].forEach((r,i)=>{const n=normalizeRecord(r,i),key=n.attemptId&& !n.attemptId.startsWith('IMPORTED-')?n.attemptId:[n.school,n.grade,n.name,n.timestamp||n.date,n.total].join('|');map.set(key,n);});adminRecords=[...map.values()];
+}
+function loadServerResults(){
+  const key=document.getElementById('admin-key').value.trim();if(!key){showToast('관리자 조회키를 입력해 주세요.');return;}
+  const status=document.getElementById('admin-status');status.textContent='서버 결과 불러오는 중...';
+  const callback='adminResultsCallback_'+Date.now(),script=document.createElement('script');let finished=false;
+  const cleanup=()=>{if(script.parentNode)script.remove();try{delete window[callback];}catch(e){}};
+  const timer=setTimeout(()=>{if(finished)return;finished=true;cleanup();status.textContent='불러오기 실패';alert('서버 응답이 없습니다. Apps Script 조회 기능과 관리자 키를 확인해 주세요.');},15000);
+  window[callback]=data=>{if(finished)return;finished=true;clearTimeout(timer);cleanup();if(!data||data.ok===false){status.textContent='권한 확인 필요';alert(data&&data.error?data.error:'관리자 조회키가 올바르지 않습니다.');return;}const rows=Array.isArray(data)?data:(data.records||data.results||[]);mergeAdminRecords(rows);renderAdmin();showToast(`서버 결과 ${rows.length}건을 불러왔습니다.`);};
+  script.onerror=()=>{if(finished)return;finished=true;clearTimeout(timer);cleanup();status.textContent='불러오기 실패';alert('서버 결과를 불러오지 못했습니다.');};
+  script.src=SCRIPT_URL+'?action=list&key='+encodeURIComponent(key)+'&callback='+encodeURIComponent(callback)+'&_='+Date.now();document.head.appendChild(script);
+}
 function storeLocalResult(payload){
   try{const list=JSON.parse(localStorage.getItem(LOCAL_RESULTS_KEY)||'[]');list.push(payload);localStorage.setItem(LOCAL_RESULTS_KEY,JSON.stringify(list.slice(-500)));}catch(e){console.warn('로컬 결과 저장 실패',e);}
 }
@@ -865,10 +888,27 @@ function studentKey(r){return [r.school,r.grade,r.name].join('|').toLowerCase();
 function previousTotals(){const groups={};adminRecords.forEach(r=>(groups[studentKey(r)]??=[]).push(r));const prev=new Map();Object.values(groups).forEach(list=>{list.sort((a,b)=>parseDateValue(a.timestamp||a.date)-parseDateValue(b.timestamp||b.date));list.forEach((r,i)=>prev.set(r,i?list[i-1].total:null));});return prev;}
 function displayDate(r){const t=parseDateValue(r.timestamp||r.date);return t?new Date(t).toLocaleString('ko-KR',{year:'2-digit',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}):(r.date||'-');}
 function renderAdminTable(){
-  const prev=previousTotals();document.getElementById('admin-count').textContent=`${filteredAdminRecords.length}건`;document.getElementById('admin-tbody').innerHTML=filteredAdminRecords.length?filteredAdminRecords.map(r=>{const p=prev.get(r),d=p===null||p===undefined?null:r.total-p,dc=d>0?'up':d<0?'down':'same',dt=d===null?'첫 검사':`${d>0?'+':''}${d}점`;return`<tr><td>${esc(displayDate(r))}</td><td>${esc(r.school||'-')}</td><td>${esc(r.grade||'-')}</td><td><b>${esc(r.name||'-')}</b></td><td><b>${r.total}</b> / 180</td><td class="delta ${dc}">${dt}</td>${r.catScores.map((s,i)=>`<td>${s} / ${CATS[i].max}</td>`).join('')}<td>${esc(r.level)}</td><td>${esc(r.attemptId)}</td></tr>`;}).join(''):'<tr><td class="ad-empty" colspan="13">표시할 결과가 없습니다. 파일을 불러오거나 샘플 데이터를 선택해 주세요.</td></tr>';
+  const prev=previousTotals();document.getElementById('admin-count').textContent=`${filteredAdminRecords.length}건`;document.getElementById('admin-tbody').innerHTML=filteredAdminRecords.length?filteredAdminRecords.map(r=>{const p=prev.get(r),d=p===null||p===undefined?null:r.total-p,dc=d>0?'up':d<0?'down':'same',dt=d===null?'첫 검사':`${d>0?'+':''}${d}점`;return`<tr><td><button class="report-open-btn" onclick="openAdminStudentReport('${esc(r.attemptId)}')">보기·PDF</button></td><td>${esc(displayDate(r))}</td><td>${esc(r.school||'-')}</td><td>${esc(r.grade||'-')}</td><td><b>${esc(r.name||'-')}</b></td><td><b>${r.total}</b> / 180</td><td class="delta ${dc}">${dt}</td>${r.catScores.map((s,i)=>`<td>${s} / ${CATS[i].max}</td>`).join('')}<td>${esc(r.level)}</td><td>${esc(r.attemptId)}</td></tr>`;}).join(''):'<tr><td class="ad-empty" colspan="14">표시할 결과가 없습니다. 파일을 불러오거나 샘플 데이터를 선택해 주세요.</td></tr>';
 }
 function csvEscape(v){const s=String(v??'');return /[",\n\r]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s;}
 function downloadAdminCSV(){if(!filteredAdminRecords.length){showToast('다운로드할 데이터가 없습니다.');return;}const heads=['timestamp','date','school','grade','name','attemptId','total','pct','level','motivation','planning','concentration','memory','strategy'];const lines=[heads.join(','),...filteredAdminRecords.map(r=>[r.timestamp,r.date,r.school,r.grade,r.name,r.attemptId,r.total,r.pct,r.level,...r.catScores].map(csvEscape).join(','))];const blob=new Blob(['\uFEFF'+lines.join('\r\n')],{type:'text/csv;charset=utf-8'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`학습습관_결과_${new Date().toISOString().slice(0,10)}.csv`;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),500);}
+function adminReportHtml(records,title){
+  const rows=records.map(r=>`<tr><td>${esc(displayDate(r))}</td><td>${esc(r.school||'-')}</td><td>${esc(r.grade||'-')}</td><td><b>${esc(r.name||'-')}</b></td><td><b>${r.total}/180</b><br>${r.pct}% · ${esc(r.level)}</td>${r.catScores.map((s,i)=>`<td>${s}/${CATS[i].max}</td>`).join('')}</tr>`).join('');
+  return `<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(title)}</title><style>@page{size:A4 landscape;margin:12mm}*{box-sizing:border-box}body{font-family:"Malgun Gothic",sans-serif;color:#1e293b;margin:0;padding:24px}h1{font-size:22px;margin:0 0 6px}.sub{color:#64748b;font-size:12px;margin-bottom:18px}.actions{display:flex;gap:8px;margin-bottom:18px}.actions button{border:0;border-radius:10px;padding:12px 16px;background:#4f46e5;color:white;font-weight:800;font-size:14px}.cards{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin-bottom:18px}.card{border:1px solid #dbeafe;border-radius:10px;padding:12px;text-align:center}.card small{display:block;color:#64748b;margin-bottom:5px}.card b{font-size:20px;color:#3730a3}table{width:100%;border-collapse:collapse;font-size:10px}th{background:#eef2ff;color:#3730a3}th,td{border:1px solid #dbe3ef;padding:8px;text-align:left;vertical-align:middle}@media print{body{padding:0}.actions{display:none}tr{break-inside:avoid}}</style></head><body><div class="actions"><button onclick="window.print()">⬇ PDF 파일로 저장 / 인쇄</button><button onclick="window.close()" style="background:#64748b">닫기</button></div><h1>${esc(title)}</h1><div class="sub">생성일: ${new Date().toLocaleString('ko-KR')} · 총 ${records.length}건</div><div class="cards"><div class="card"><small>전체 평균</small><b>${avg(records,r=>r.total)}점</b></div>${CATS.map((c,i)=>`<div class="card"><small>${esc(c.name)}</small><b>${avg(records,r=>r.catScores[i])}</b></div>`).join('')}</div><table><thead><tr><th>검사일시</th><th>학교</th><th>학년/반</th><th>학생명</th><th>총점</th>${CATS.map(c=>`<th>${esc(c.name)}</th>`).join('')}</tr></thead><tbody>${rows}</tbody></table></body></html>`;
+}
+function openReportWindow(records,title){const w=window.open('','_blank');if(!w){alert('팝업이 차단되었습니다. 브라우저에서 팝업 허용 후 다시 눌러 주세요.');return;}w.document.open();w.document.write(adminReportHtml(records,title));w.document.close();}
+function openAdminStudentReport(attemptId){
+  const r=adminRecords.find(x=>x.attemptId===attemptId);if(!r){showToast('결과를 찾지 못했습니다.');return;}
+  if(r.answers&&r.answers.length===36&&r.answers.every(v=>v>=1&&v<=5)){
+    const w=window.open('','_blank');if(!w){alert('팝업이 차단되었습니다. 브라우저에서 팝업 허용 후 다시 눌러 주세요.');return;}
+    const oldInfo=info,oldAns=ans,oldDate=dateStr;
+    try{info={school:r.school||'학교 미입력',grade:r.grade||'학년 미입력',name:r.name||'학생'};ans=r.answers.slice();dateStr=r.date?String(r.date).slice(0,10).replace(/-/g,'.'):displayDate(r).slice(0,10);const html=downloadResult(true);w.document.open();w.document.write(html);w.document.close();}
+    finally{info=oldInfo;ans=oldAns;dateStr=oldDate;}
+    return;
+  }
+  openReportWindow([r],`${r.name||'학생'} 학습습관 전체 요약 결과지`);showToast('이전 자료는 문항 응답값이 없어 요약형으로 열었습니다.');
+}
+function printFilteredSummary(){if(!filteredAdminRecords.length){showToast('다운로드할 결과가 없습니다.');return;}openReportWindow(filteredAdminRecords,'학습습관 검사 전체 요약 결과');}
 
 function showInAppBrowserNotice(){
   const ua=navigator.userAgent||'';
@@ -877,15 +917,21 @@ function showInAppBrowserNotice(){
   box.innerHTML='<div style="width:min(400px,100%);background:#fff;border-radius:18px;padding:24px 18px;text-align:center;font-family:inherit"><div style="font-size:34px;margin-bottom:10px">🌐</div><div style="font-size:19px;font-weight:900;color:#1e293b;margin-bottom:8px">Chrome에서 검사를 시작해 주세요</div><div style="font-size:12px;line-height:1.7;color:#64748b;margin-bottom:16px">카카오톡·앱 내부 브라우저는 PDF 저장을 제한합니다. 검사 전에 아래 버튼을 한 번만 누르세요.</div><a href="intent://lleejj27533-png.github.io/kmediacenter1/?v=5#Intent;scheme=https;package=com.android.chrome;end" style="display:block;padding:15px;background:linear-gradient(135deg,#4f46e5,#7c3aed);color:#fff;text-decoration:none;border-radius:12px;font-size:15px;font-weight:900">Chrome으로 열기</a><button id="inapp-continue" style="margin-top:9px;width:100%;padding:10px;background:#f1f5f9;color:#64748b;border:0;border-radius:9px;font-size:11px">현재 브라우저에서 계속</button></div>';
   document.body.appendChild(box);document.getElementById('inapp-continue').onclick=()=>box.remove();
 }
-// 앱 내부 브라우저에서도 검사는 그대로 진행하고, PDF는 현재 화면에서 생성합니다.
+function autoOpenChromeForPdfSupport(){
+  const ua=navigator.userAgent||'',android=/Android/i.test(ua),inApp=['KAKAOTALK','NAVER','FBAN','FBAV','Instagram','Line/'].some(k=>ua.includes(k));
+  if(android&&inApp){window.location.href='intent://lleejj27533-png.github.io/kmediacenter1/student-v12.html#Intent;scheme=https;package=com.android.chrome;end';}
+}
+setTimeout(autoOpenChromeForPdfSupport,300);
+setTimeout(()=>{if(!/Android|iPhone|iPad|iPod/i.test(navigator.userAgent||'')){const b=document.getElementById('pdf-save-btn');if(b)b.textContent='🖨️ PDF 저장·인쇄';}},300);
 
 // ── SAVE RESULT TO SERVER ────────────────────────────────────
-function saveResult(){
+function saveResult(auto=false){
   const btn = document.getElementById('save-result-btn');
   if(!SCRIPT_URL){
     showToast('저장 URL이 설정되지 않았습니다. 관리자에게 문의하세요.');
     return;
   }
+  if(lastSavedAttemptId===currentAttemptId){if(!auto)showToast('이미 자동 저장된 결과입니다.');return;}
   if(btn.disabled) return;
 
   const total      = ans.reduce((a,b)=>a+b,0);
@@ -894,7 +940,7 @@ function saveResult(){
   const catScores  = CATS.map(cat=>cat.qs.reduce((s,q)=>s+ans[q-1],0));
   const catLevels  = catScores.map((sc,i)=>getLevel(CATS[i],sc));
 
-  const timestamp = new Date().toISOString();
+  const timestamp = currentTimestamp||new Date().toISOString();
   const payload = {
     school    : info.school,
     grade     : info.grade,
@@ -907,13 +953,14 @@ function saveResult(){
     catLevels : catLevels,
     answers   : ans,
     timestamp : timestamp,
-    attemptId : makeAttemptId()
+    attemptId : currentAttemptId||makeAttemptId()
   };
 
   storeLocalResult(payload);
+  lastSavedAttemptId=payload.attemptId;
 
   btn.disabled = true;
-  btn.textContent = '⏳ 저장 중...';
+  btn.textContent = auto?'⏳ 자동 저장 중...':'⏳ 저장 중...';
   btn.style.background = '#64748b';
 
   fetch(SCRIPT_URL, {
@@ -923,12 +970,12 @@ function saveResult(){
     body   : JSON.stringify(payload)
   })
   .then(()=>{
-    btn.textContent = '✅ 저장 완료!';
+    btn.textContent = '✅ 자동 저장 완료';
     btn.style.background = '#15803d';
-    showToast('✅ '+info.name+' 학생 결과가 저장되었습니다!');
+    showToast('✅ '+info.name+' 학생 결과가 관리자 서버에 자동 저장되었습니다!');
   })
   .catch(err=>{
-    btn.disabled = false;
+    lastSavedAttemptId='';btn.disabled = false;
     btn.textContent = '☁️ 결과 저장하기';
     btn.style.background = 'linear-gradient(135deg,#059669,#10b981)';
     showToast('저장 실패. 인터넷 연결을 확인해 주세요.');
