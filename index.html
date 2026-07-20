@@ -664,9 +664,9 @@ body{font-family:'Malgun Gothic','맑은 고딕',Apple SD Gothic Neo,sans-serif;
   <div class="save-actions">
     <button class="save-bar-btn" onclick="printReport()">🖨️ PDF·인쇄</button>
     <button class="save-bar-btn share" onclick="shareReport()">📤 공유</button>
-    <button class="save-bar-btn file" onclick="downloadReportFile()">⬇️ 파일 저장</button>
+    <button class="save-bar-btn file" onclick="saveAndPreviewReport()">⬇️ 저장·바로보기</button>
   </div>
-  <div class="save-note">PDF·인쇄가 열리지 않으면 ‘파일 저장’ 후 내려받은 결과지를 열어 인쇄하세요.</div>
+  <div class="save-note">‘저장·바로보기’를 누르면 파일을 내려받고 같은 결과를 새 탭에서 즉시 확인합니다.</div>
 </div>
 
 <div class="doc">
@@ -751,6 +751,13 @@ async function shareReport(){
   try{if(navigator.canShare&&navigator.canShare({files:[file]})){await navigator.share({title:'학습습관 검사 결과',text:'${info.name} 학생의 학습습관 검사 결과입니다.',files:[file]});return;}if(navigator.share){await navigator.share({title:'학습습관 검사 결과',text:'${info.name} 학생의 학습습관 검사 결과입니다.'});return;}throw new Error('unsupported');}catch(e){if(e.name!=='AbortError'){downloadReportFile();alert('공유 기능을 지원하지 않는 브라우저라 결과 파일로 저장했습니다.');}}
 }
 function downloadReportFile(){const blob=new Blob([printableHtml()],{type:'text/html;charset=utf-8'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=reportFileName()+'.html';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),1000);}
+function saveAndPreviewReport(){
+  const preview=window.open('','_blank'),content=printableHtml(),blob=new Blob([content],{type:'text/html;charset=utf-8'}),url=URL.createObjectURL(blob),a=document.createElement('a');
+  a.href=url;a.download=reportFileName()+'.html';document.body.appendChild(a);a.click();a.remove();
+  if(preview){preview.document.open();preview.document.write(content);preview.document.close();try{preview.document.title=reportFileName();}catch(e){}}
+  else{alert('결과 파일이 다운로드되었습니다. 새 탭이 차단되어 현재 화면에서 결과를 확인할 수 있습니다. 브라우저 다운로드 목록에서 파일을 열어 주세요.');}
+  setTimeout(()=>URL.revokeObjectURL(url),1500);
+}
 <\/script>
 </body></html>`;
 
