@@ -664,11 +664,11 @@ body{font-family:'Malgun Gothic','맑은 고딕',Apple SD Gothic Neo,sans-serif;
 <!-- 모바일 고정 저장 버튼 -->
 <div class="save-bar no-print">
   <div class="save-actions">
-    <button class="save-bar-btn" id="pdf-save-btn" onclick="downloadPdfFile()">📄 PDF 저장</button>
+    <button class="save-bar-btn" id="pdf-save-btn" onclick="downloadPdfFile()">📄 PDF 저장·공유</button>
     <button class="save-bar-btn share" onclick="shareReport()">📤 공유</button>
     <button class="save-bar-btn file" onclick="saveAndPreviewReport()">⬇️ 저장·바로보기</button>
   </div>
-  <div class="save-note">‘PDF 저장’은 여러 페이지 PDF 문서를 직접 내려받습니다. 생성 중에는 화면을 닫지 마세요.</div>
+  <div class="save-note">모바일은 공유 창에서 ‘파일에 저장’ 또는 ‘다운로드’를 선택하세요. 생성 중에는 화면을 닫지 마세요.</div>
 </div>
 
 <div class="doc">
@@ -752,9 +752,20 @@ async function downloadPdfFile(){
   const btn=document.getElementById('pdf-save-btn');
   if(typeof html2pdf==='undefined'){alert('PDF 생성 도구를 불러오지 못했습니다. 인터넷 연결을 확인한 뒤 다시 시도합니다. 인쇄 화면에서 PDF 저장을 선택할 수도 있습니다.');printReport();return;}
   const source=document.querySelector('.doc').cloneNode(true);source.querySelectorAll('.no-print').forEach(el=>el.remove());source.style.maxWidth='760px';source.style.margin='0 auto';source.style.padding='18px';source.style.background='#fff';
+  const mobile=/Android|iPhone|iPad|iPod/i.test(navigator.userAgent||''),preview=mobile?window.open('','_blank'):null;
+  if(preview){preview.document.write('<div style="font-family:sans-serif;padding:40px;text-align:center">⏳ PDF 문서를 생성하고 있습니다...</div>');preview.document.close();}
   const old=btn.textContent;btn.disabled=true;btn.textContent='⏳ PDF 생성 중';
   const options={margin:[8,8,10,8],filename:reportFileName()+'.pdf',image:{type:'jpeg',quality:.96},html2canvas:{scale:1.7,useCORS:true,backgroundColor:'#ffffff',scrollY:0},jsPDF:{unit:'mm',format:'a4',orientation:'portrait'},pagebreak:{mode:['css','legacy'],avoid:['.cat-row','.action','.insight','.sig-row']}};
-  try{await html2pdf().set(options).from(source).save();btn.textContent='✅ PDF 저장 완료';setTimeout(()=>{btn.textContent=old;btn.disabled=false},1800);}catch(e){console.error(e);btn.textContent=old;btn.disabled=false;alert('PDF 생성에 실패했습니다. 인쇄 화면에서 PDF로 저장을 선택해 주세요.');printReport();}
+  try{
+    const blob=await html2pdf().set(options).from(source).outputPdf('blob'),name=reportFileName()+'.pdf',file=new File([blob],name,{type:'application/pdf'}),url=URL.createObjectURL(blob);
+    let shared=false;
+    if(navigator.canShare&&navigator.canShare({files:[file]})){try{await navigator.share({title:'학습습관 검사 결과',text:'PDF 결과 문서입니다.',files:[file]});shared=true;}catch(e){shared=false;}}
+    if(shared){if(preview&&!preview.closed)preview.close();}
+    else if(preview){preview.location.replace(url);}
+    else{const a=document.createElement('a');a.href=url;a.download=name;a.target='_blank';a.rel='noopener';document.body.appendChild(a);a.click();a.remove();}
+    btn.textContent=shared?'✅ 저장 창 열림':'✅ PDF 열림';
+    setTimeout(()=>{URL.revokeObjectURL(url);btn.textContent=old;btn.disabled=false},60000);
+  }catch(e){console.error(e);if(preview&&!preview.closed)preview.close();btn.textContent=old;btn.disabled=false;alert('PDF 생성에 실패했습니다. 브라우저 메뉴의 인쇄에서 PDF 저장을 선택해 주세요.');printReport();}
 }
 async function shareReport(){
   const blob=new Blob([printableHtml()],{type:'text/html;charset=utf-8'}),file=new File([blob],reportFileName()+'.html',{type:'text/html'});
