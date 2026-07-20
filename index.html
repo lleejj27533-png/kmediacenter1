@@ -581,7 +581,7 @@ function downloadResult(){
 <title>학습습관 검사 결과 — ${info.name}</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:'Malgun Gothic','맑은 고딕',Apple SD Gothic Neo,sans-serif;background:#f8fafc;color:#1e293b;padding-bottom:100px}
+body{font-family:'Malgun Gothic','맑은 고딕',Apple SD Gothic Neo,sans-serif;background:#f8fafc;color:#1e293b;padding-bottom:112px;overflow-y:auto;-webkit-overflow-scrolling:touch}
 @page{size:A4;margin:1.2cm}
 @media print{
   body{background:#fff;padding-bottom:0}
@@ -595,28 +595,22 @@ body{font-family:'Malgun Gothic','맑은 고딕',Apple SD Gothic Neo,sans-serif;
 .save-bar{
   position:fixed;bottom:0;left:0;right:0;z-index:999;
   background:linear-gradient(135deg,#1e293b,#334155);
-  padding:10px 14px 14px;
+  padding:10px 12px max(10px,env(safe-area-inset-bottom));
   box-shadow:0 -4px 20px rgba(0,0,0,.25);
 }
+.save-actions{max-width:800px;margin:0 auto;display:grid;grid-template-columns:repeat(3,1fr);gap:7px}
 .save-bar-btn{
-  width:100%;padding:14px;
+  width:100%;min-height:48px;padding:9px 5px;
   background:linear-gradient(135deg,#4F46E5,#7C3AED);
   color:#fff;border:none;border-radius:12px;
-  font-size:15px;font-weight:800;cursor:pointer;
+  font-size:12px;font-weight:800;cursor:pointer;
   font-family:inherit;letter-spacing:.3px;
   display:flex;align-items:center;justify-content:center;gap:8px;
-  margin-bottom:8px;
 }
+.save-bar-btn.share{background:linear-gradient(135deg,#0284c7,#06b6d4)}
+.save-bar-btn.file{background:linear-gradient(135deg,#047857,#10b981)}
 .save-bar-btn:active{opacity:.88;transform:scale(.98)}
-.save-hint{
-  display:grid;grid-template-columns:1fr 1fr;gap:6px;
-}
-.hint-box{
-  background:rgba(255,255,255,.1);border-radius:8px;
-  padding:6px 8px;text-align:center;
-}
-.hint-os{font-size:12px;font-weight:700;color:#fff;display:block;margin-bottom:2px}
-.hint-step{font-size:10px;color:rgba(255,255,255,.75);line-height:1.5}
+.save-note{max-width:800px;margin:6px auto 0;color:rgba(255,255,255,.72);font-size:9px;text-align:center;line-height:1.4}
 .doc{max-width:800px;margin:0 auto;background:#fff;padding:20px 16px}
 @media(min-width:600px){.doc{padding:32px 36px}}
 .hd{background:linear-gradient(135deg,#4F46E5,#7C3AED);color:#fff;border-radius:14px;padding:20px 18px;margin-bottom:20px}
@@ -667,22 +661,12 @@ body{font-family:'Malgun Gothic','맑은 고딕',Apple SD Gothic Neo,sans-serif;
 
 <!-- 모바일 고정 저장 버튼 -->
 <div class="save-bar no-print">
-  <button class="save-bar-btn" onclick="window.print()">
-    🖨️ PDF로 저장 / 인쇄하기
-  </button>
-  <div class="save-hint">
-    <div class="hint-box">
-      <span class="hint-os">📱 iPhone · iPad</span>
-      <span class="hint-step">공유 버튼(□↑) →<br>프린트 →<br>PDF 저장</span>
-    </div>
-    <div class="hint-box">
-      <span class="hint-os">🤖 Android</span>
-      <span class="hint-step">⋮ 메뉴 →<br>인쇄 →<br>PDF로 저장</span>
-    </div>
+  <div class="save-actions">
+    <button class="save-bar-btn" onclick="printReport()">🖨️ PDF·인쇄</button>
+    <button class="save-bar-btn share" onclick="shareReport()">📤 공유</button>
+    <button class="save-bar-btn file" onclick="downloadReportFile()">⬇️ 파일 저장</button>
   </div>
-  <button onclick="location.reload()" style="width:100%;margin-top:8px;padding:9px;background:rgba(255,255,255,.12);color:rgba(255,255,255,.8);border:1px solid rgba(255,255,255,.2);border-radius:9px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit">
-    ← 검사 처음으로 돌아가기
-  </button>
+  <div class="save-note">PDF·인쇄가 열리지 않으면 ‘파일 저장’ 후 내려받은 결과지를 열어 인쇄하세요.</div>
 </div>
 
 <div class="doc">
@@ -756,7 +740,18 @@ body{font-family:'Malgun Gothic','맑은 고딕',Apple SD Gothic Neo,sans-serif;
     <div class="sig-box"><div class="sig-lbl">담임 확인</div><div class="sig-line"></div><div class="sig-sub">서명</div></div>
     <div class="sig-box"><div class="sig-lbl">작성일</div><div class="sig-line" style="line-height:28px;font-size:12px;color:#64748b;text-align:center">${dateStr}</div><div class="sig-sub">날짜</div></div>
   </div>
+  <button class="no-print" onclick="location.reload()" style="width:100%;margin-top:18px;padding:12px;background:#e2e8f0;color:#475569;border:0;border-radius:10px;font-size:12px;font-weight:700;cursor:pointer">← 검사 처음으로 돌아가기</button>
 </div>
+<script>
+function reportFileName(){return '학습습관검사_결과_${info.name.replace(/[^가-힣a-zA-Z0-9_-]/g,'_')}_${dateStr.replace(/[^0-9]/g,'')||'result'}';}
+function printableHtml(){const clone=document.documentElement.cloneNode(true);clone.querySelectorAll('.no-print').forEach(el=>el.remove());return '<!DOCTYPE html>\\n'+clone.outerHTML;}
+function printReport(){try{window.print();}catch(e){alert('이 브라우저에서는 인쇄를 열 수 없습니다. 파일 저장 버튼을 이용해 주세요.');}}
+async function shareReport(){
+  const blob=new Blob([printableHtml()],{type:'text/html;charset=utf-8'}),file=new File([blob],reportFileName()+'.html',{type:'text/html'});
+  try{if(navigator.canShare&&navigator.canShare({files:[file]})){await navigator.share({title:'학습습관 검사 결과',text:'${info.name} 학생의 학습습관 검사 결과입니다.',files:[file]});return;}if(navigator.share){await navigator.share({title:'학습습관 검사 결과',text:'${info.name} 학생의 학습습관 검사 결과입니다.'});return;}throw new Error('unsupported');}catch(e){if(e.name!=='AbortError'){downloadReportFile();alert('공유 기능을 지원하지 않는 브라우저라 결과 파일로 저장했습니다.');}}
+}
+function downloadReportFile(){const blob=new Blob([printableHtml()],{type:'text/html;charset=utf-8'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=reportFileName()+'.html';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),1000);}
+<\/script>
 </body></html>`;
 
   // ── 현재 페이지를 결과지로 교체 (모바일 완벽 호환) ──────────
