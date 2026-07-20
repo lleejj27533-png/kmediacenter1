@@ -938,16 +938,16 @@ function openAdminStudentReport(attemptId){
 }
 function printFilteredSummary(){if(!filteredAdminRecords.length){showToast('다운로드할 결과가 없습니다.');return;}openReportWindow(filteredAdminRecords,'학습습관 검사 전체 요약 결과');}
 
-function showInAppBrowserNotice(){
+function showInAppBrowserNotice(force=false){
   const ua=navigator.userAgent||'';
-  if(!/KAKAOTALK|NAVER\(|FBAN|FBAV|Instagram|Line\//i.test(ua)||document.getElementById('inapp-notice'))return;
+  if((!force&&!/KAKAOTALK|NAVER|FBAN|FBAV|Instagram|Line\/|SamsungBrowser|DaumApps|; wv\)|\bwv\b/i.test(ua))||document.getElementById('inapp-notice'))return;
   const box=document.createElement('div');box.id='inapp-notice';box.style.cssText='position:fixed;inset:0;z-index:10000;background:rgba(15,23,42,.92);padding:20px;display:flex;align-items:center;justify-content:center';
-  box.innerHTML='<div style="width:min(400px,100%);background:#fff;border-radius:18px;padding:24px 18px;text-align:center;font-family:inherit"><div style="font-size:34px;margin-bottom:10px">🌐</div><div style="font-size:19px;font-weight:900;color:#1e293b;margin-bottom:8px">Chrome에서 검사를 시작해 주세요</div><div style="font-size:12px;line-height:1.7;color:#64748b;margin-bottom:16px">카카오톡·앱 내부 브라우저는 PDF 저장을 제한합니다. 검사 전에 아래 버튼을 한 번만 누르세요.</div><a href="intent://lleejj27533-png.github.io/kmediacenter1/?v=5#Intent;scheme=https;package=com.android.chrome;end" style="display:block;padding:15px;background:linear-gradient(135deg,#4f46e5,#7c3aed);color:#fff;text-decoration:none;border-radius:12px;font-size:15px;font-weight:900">Chrome으로 열기</a><button id="inapp-continue" style="margin-top:9px;width:100%;padding:10px;background:#f1f5f9;color:#64748b;border:0;border-radius:9px;font-size:11px">현재 브라우저에서 계속</button></div>';
+  box.innerHTML='<div style="width:min(400px,100%);background:#fff;border-radius:18px;padding:24px 18px;text-align:center;font-family:inherit"><div style="font-size:34px;margin-bottom:10px">🌐</div><div style="font-size:19px;font-weight:900;color:#1e293b;margin-bottom:8px">Chrome에서 검사를 시작해 주세요</div><div style="font-size:12px;line-height:1.7;color:#64748b;margin-bottom:16px">QR 앱 내부 화면에서는 PDF 저장·공유가 제한됩니다. 아래 버튼만 한 번 누르면 됩니다.</div><a href="intent://lleejj27533-png.github.io/kmediacenter1/?external=1&v=18#Intent;scheme=https;package=com.android.chrome;end" style="display:block;padding:16px;background:linear-gradient(135deg,#4f46e5,#7c3aed);color:#fff;text-decoration:none;border-radius:12px;font-size:16px;font-weight:900">Chrome으로 검사 시작</a><button id="inapp-continue" style="margin-top:9px;width:100%;padding:10px;background:#f1f5f9;color:#64748b;border:0;border-radius:9px;font-size:11px">현재 화면에서 계속</button></div>';
   document.body.appendChild(box);document.getElementById('inapp-continue').onclick=()=>box.remove();
 }
 function autoOpenChromeForPdfSupport(){
-  const ua=navigator.userAgent||'',android=/Android/i.test(ua),inApp=['KAKAOTALK','NAVER','FBAN','FBAV','Instagram','Line/'].some(k=>ua.includes(k));
-  if(android&&inApp){window.location.href='intent://lleejj27533-png.github.io/kmediacenter1/student-v12.html#Intent;scheme=https;package=com.android.chrome;end';}
+  const ua=navigator.userAgent||'',android=/Android/i.test(ua),embedded=/KAKAOTALK|NAVER|FBAN|FBAV|Instagram|Line\/|SamsungBrowser|DaumApps|; wv\)|\bwv\b/i.test(ua),realChrome=/Chrome\//i.test(ua)&&!embedded;
+  if(android&&!realChrome&&!/[?&]external=1(?:&|$)/.test(location.search)){window.location.href='intent://lleejj27533-png.github.io/kmediacenter1/?external=1&v=18#Intent;scheme=https;package=com.android.chrome;end';setTimeout(()=>showInAppBrowserNotice(true),1200);}
 }
 setTimeout(autoOpenChromeForPdfSupport,300);
 setTimeout(()=>{if(!/Android|iPhone|iPad|iPod/i.test(navigator.userAgent||'')){const b=document.getElementById('pdf-save-btn');if(b)b.textContent='🖨️ 2. PDF 저장·인쇄';}},300);
